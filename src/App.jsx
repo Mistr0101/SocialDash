@@ -7,6 +7,7 @@ import Accounts from './pages/Accounts'
 import AuthCallback from './pages/AuthCallback'
 
 function App() {
+  console.log('App rendering') // Debug log
   return (
     <Routes>
       <Route element={<Layout />}>
