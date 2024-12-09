@@ -8,56 +8,52 @@ const platforms = [
     name: 'Facebook',
     icon: '📘',
     description: 'Connect your Facebook pages and profiles',
-    platform: 'facebook'
+    platform: 'facebook',
+    enabled: true
   },
   {
     name: 'Instagram',
     icon: '📸',
     description: 'Connect your Instagram business accounts',
-    platform: 'instagram'
+    platform: 'instagram',
+    enabled: false
   },
   {
     name: 'LinkedIn',
     icon: '💼',
     description: 'Connect your LinkedIn profile and pages',
-    platform: 'linkedin'
+    platform: 'linkedin',
+    enabled: false
   },
   {
     name: 'TikTok',
     icon: '🎵',
     description: 'Connect your TikTok creator accounts',
-    platform: 'tiktok'
+    platform: 'tiktok',
+    enabled: false
   },
   {
     name: 'WhatsApp',
     icon: '💬',
     description: 'Connect your WhatsApp Business account',
-    platform: 'whatsapp'
+    platform: 'whatsapp',
+    enabled: false
   }
 ]
 
 export default function Accounts() {
-  console.log('Accounts component rendering') // Debug log
-
   const [connectedAccounts, setConnectedAccounts] = useState([])
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)
   const location = useLocation()
 
-  useEffect(() => {
-    console.log('Environment variables:', {
-      appUrl: import.meta.env.VITE_APP_URL,
-      facebookAppId: import.meta.env.VITE_FACEBOOK_APP_ID
-    })
-    console.log('Social config:', socialConfig)
-  }, [])
-
   const handleConnect = async (platform) => {
-    console.log('handleConnect called for platform:', platform) // Debug log
     try {
-      const config = socialConfig[platform.platform]
-      console.log('Platform config:', config) // Debug log
+      if (!platform.enabled) {
+        throw new Error(`${platform.name} integration coming soon!`)
+      }
 
+      const config = socialConfig[platform.platform]
       if (!config || !config.appId) {
         throw new Error(`Configuration manquante pour ${platform.name}`)
       }
@@ -69,33 +65,23 @@ export default function Accounts() {
       switch (platform.platform) {
         case 'facebook':
           authUrl = `https://www.facebook.com/v18.0/dialog/oauth?client_id=${config.appId}&redirect_uri=${encodeURIComponent(config.redirectUri)}&state=${state}&scope=${encodeURIComponent(config.scope)}`
-          console.log('Facebook auth URL:', authUrl) // Debug log
+          window.location.href = authUrl
           break
         default:
-          console.log('Simulating connection for:', platform.name) // Debug log
-          const newAccount = {
-            id: Date.now(),
-            platform: platform.name,
-            username: `${platform.name.toLowerCase()}_user_${Math.floor(Math.random() * 1000)}`,
-            avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${platform.name}`,
-            connected: new Date().toISOString()
-          }
-          setConnectedAccounts(prev => [...prev, newAccount])
-          return
-      }
-
-      if (authUrl) {
-        window.location.href = authUrl
+          throw new Error(`${platform.name} integration coming soon!`)
       }
     } catch (err) {
-      console.error('Connection error:', err) // Debug log
       setError(err.message)
+      // Effacer le message d'erreur après 5 secondes
+      setTimeout(() => setError(null), 5000)
     }
   }
 
   const handleDisconnect = (accountId) => {
-    console.log('Disconnecting account:', accountId) // Debug log
     setConnectedAccounts(prev => prev.filter(account => account.id !== accountId))
+    setSuccess('Account disconnected successfully')
+    // Effacer le message de succès après 5 secondes
+    setTimeout(() => setSuccess(null), 5000)
   }
 
   return (
@@ -176,7 +162,9 @@ export default function Accounts() {
             {platforms.map((platform) => (
               <div
                 key={platform.name}
-                className="relative rounded-lg border border-gray-300 bg-white px-6 py-5 shadow-sm flex items-center space-x-3 hover:border-gray-400"
+                className={`relative rounded-lg border border-gray-300 bg-white px-6 py-5 shadow-sm flex items-center space-x-3 ${
+                  platform.enabled ? 'hover:border-gray-400' : 'opacity-75'
+                }`}
               >
                 <div className="flex-shrink-0 text-2xl">
                   {platform.icon}
@@ -187,13 +175,18 @@ export default function Accounts() {
                       {platform.name}
                     </p>
                     <p className="text-sm text-gray-500 truncate">
-                      {platform.description}
+                      {platform.enabled ? platform.description : 'Coming soon!'}
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={() => handleConnect(platform)}
-                  className="inline-flex items-center p-1.5 border border-transparent rounded-full text-white bg-blue-600 hover:bg-blue-700"
+                  className={`inline-flex items-center p-1.5 border border-transparent rounded-full text-white ${
+                    platform.enabled 
+                      ? 'bg-blue-600 hover:bg-blue-700' 
+                      : 'bg-gray-400 cursor-not-allowed'
+                  }`}
+                  disabled={!platform.enabled}
                 >
                   <PlusIcon className="h-5 w-5" />
                 </button>
@@ -201,21 +194,6 @@ export default function Accounts() {
             ))}
           </div>
         </div>
-      </div>
-
-      {/* Debug Info */}
-      <div className="mt-8 p-4 bg-gray-100 rounded-lg">
-        <h4 className="text-sm font-medium text-gray-900">Debug Information</h4>
-        <pre className="mt-2 text-xs text-gray-600 overflow-auto">
-          {JSON.stringify({
-            env: {
-              appUrl: import.meta.env.VITE_APP_URL,
-              hasFacebookAppId: !!import.meta.env.VITE_FACEBOOK_APP_ID
-            },
-            socialConfig: socialConfig,
-            connectedAccounts: connectedAccounts.length
-          }, null, 2)}
-        </pre>
       </div>
     </div>
   )
